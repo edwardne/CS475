@@ -1,0 +1,114 @@
+RESULTS
+=======
+Using 1 threads and 2^2 nodes
+totalVolume =  27.0000
+kiloHeights/sec =     0.00
+Using 1 threads and 4^2 nodes
+totalVolume =  26.1111
+kiloHeights/sec =     0.00
+Using 1 threads and 8^2 nodes
+totalVolume =  25.4706
+kiloHeights/sec =     0.00
+Using 1 threads and 16^2 nodes
+totalVolume =  25.3474
+kiloHeights/sec =     0.00
+Using 1 threads and 32^2 nodes
+totalVolume =  25.3207
+kiloHeights/sec =  7476.17
+Using 1 threads and 64^2 nodes
+totalVolume =  25.3145
+kiloHeights/sec =  6387.75
+Using 1 threads and 128^2 nodes
+totalVolume =  25.3130
+kiloHeights/sec =  7822.35
+Using 1 threads and 256^2 nodes
+totalVolume =  25.3126
+kiloHeights/sec =  6758.04
+Using 1 threads and 1024^2 nodes
+totalVolume =  25.3109
+kiloHeights/sec =  5554.83
+
+Using 2 threads and 2^2 nodes
+totalVolume =  27.0000
+kiloHeights/sec =     0.00
+Using 2 threads and 4^2 nodes
+totalVolume =  26.1111
+kiloHeights/sec =     0.00
+Using 2 threads and 8^2 nodes
+totalVolume =  25.4706
+kiloHeights/sec =     0.00
+Using 2 threads and 16^2 nodes
+totalVolume =  25.3474
+kiloHeights/sec =     0.00
+Using 2 threads and 32^2 nodes
+totalVolume =  25.3207
+kiloHeights/sec =  8300.54
+Using 2 threads and 64^2 nodes
+totalVolume =  25.3145
+kiloHeights/sec =  7232.68
+Using 2 threads and 128^2 nodes
+totalVolume =  25.3130
+kiloHeights/sec = 10771.13
+Using 2 threads and 256^2 nodes
+totalVolume =  25.3126
+kiloHeights/sec =  4201.42
+Using 2 threads and 1024^2 nodes
+totalVolume =  25.3126
+kiloHeights/sec =  9897.34
+
+Using 4 threads and 2^2 nodes
+totalVolume =  27.0000
+kiloHeights/sec =     0.00
+Using 4 threads and 4^2 nodes
+totalVolume =  26.1111
+kiloHeights/sec =     0.00
+Using 4 threads and 8^2 nodes
+totalVolume =  25.4706
+kiloHeights/sec =     0.00
+Using 4 threads and 16^2 nodes
+totalVolume =  25.3474
+kiloHeights/sec =     0.00
+Using 4 threads and 32^2 nodes
+totalVolume =  25.3207
+kiloHeights/sec =  6301.15
+Using 4 threads and 64^2 nodes
+totalVolume =  25.3145
+kiloHeights/sec = 14928.01
+Using 4 threads and 128^2 nodes
+totalVolume =  25.3130
+kiloHeights/sec = 15333.01
+Using 4 threads and 256^2 nodes
+totalVolume =  25.3126
+kiloHeights/sec = 19554.34
+Using 4 threads and 1024^2 nodes
+totalVolume =  25.3126
+kiloHeights/sec = 11190.78
+
+Using 16 threads and 2^2 nodes
+totalVolume =  27.0000
+kiloHeights/sec =     0.00
+Using 16 threads and 4^2 nodes
+totalVolume =  26.1111
+kiloHeights/sec =     0.00
+Using 16 threads and 8^2 nodes
+totalVolume =  25.4706
+kiloHeights/sec =     0.00
+Using 16 threads and 16^2 nodes
+totalVolume =  25.3474
+kiloHeights/sec =     0.00
+Using 16 threads and 32^2 nodes
+totalVolume =  25.3207
+kiloHeights/sec =    61.15
+Using 16 threads and 64^2 nodes
+totalVolume =  25.3145
+kiloHeights/sec =   409.32
+Using 16 threads and 128^2 nodes
+totalVolume =  25.3130
+kiloHeights/sec =  1555.24
+Using 16 threads and 256^2 nodes
+totalVolume =  25.3126
+kiloHeights/sec =  4635.04
+Using 16 threads and 1024^2 nodes
+totalVolume =  25.3125
+kiloHeights/sec = 19538.30
+
