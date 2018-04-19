@@ -5,7 +5,7 @@ echo "=======" >> results.out
 
 for t in 1 2 4 16
 do
-    for n in 2 4 8 16 32 64 128 256 1024 
+    for n in 16 32 64 128 256 512 1024 2048
     do
         echo NUMT=$t
         echo NUMNODES=$n
