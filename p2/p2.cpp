@@ -6,141 +6,196 @@
  ** Input: none
  ** Output: none
  *********************************************************************/
-
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <omp.h>
 
-/* #define NUMNODES 1000 */
-#define NUMTRIES 10
+#define NUMTHREADS 1
+#define NUMBODIES         100
+#define NUMSTEPS           200
 
-// Define Bezier surface constants
-#define XMIN  0.
-#define XMAX  3.
-#define YMIN  0.
-#define YMAX  3.
+// constants:
 
-#define TOPZ00  0.
-#define TOPZ10  1.
-#define TOPZ20  0.
-#define TOPZ30  0.
-
-#define TOPZ01  1.
-#define TOPZ11  6.
-#define TOPZ21  1.
-#define TOPZ31  0.
-
-#define TOPZ02  0.
-#define TOPZ12  1.
-#define TOPZ22  0.
-#define TOPZ32  4.
-
-#define TOPZ03  3.
-#define TOPZ13  2.
-#define TOPZ23  3.
-#define TOPZ33  3.
-
-#define BOTZ00  0.
-#define BOTZ10  -3.
-#define BOTZ20  0.
-#define BOTZ30  0.
-
-#define BOTZ01  -2.
-#define BOTZ11  10.
-#define BOTZ21  -2.
-#define BOTZ31  0.
-
-#define BOTZ02  0.
-#define BOTZ12  -5.
-#define BOTZ22  0.
-#define BOTZ32  -6.
-
-#define BOTZ03  -3.
-#define BOTZ13   2.
-#define BOTZ23  -8.
-#define BOTZ33  -3.
+const double G                    = 6.67300e-11;   // m^3 / ( kg s^2 )
+const double EARTH_MASS           = 5.9742e24;     // kg
+const double EARTH_DIAMETER       = 12756000.32;   // meters
+const double TIMESTEP             =   1.0; // secs
 
 
-double Height( int iu, int iv )    // iu,iv = 0 .. NUMNODES-1
+struct body
 {
-    double u = (double)iu / (double)(NUMNODES-1);
-    double v = (double)iv / (double)(NUMNODES-1);
+	float mass;
+	float x, y, z;            // position
+	float vx, vy, vz;         // velocity
+	float fx, fy, fz;         // forces
+	float xnew, ynew, znew;
+	float vxnew, vynew, vznew;
+};
 
-    // the basis functions:
+typedef struct body Body;
 
-    double bu0 = (1.-u) * (1.-u) * (1.-u);
-    double bu1 = 3. * u * (1.-u) * (1.-u);
-    double bu2 = 3. * u * u * (1.-u);
-    double bu3 = u * u * u;
+Body     Bodies[NUMBODIES];
 
-    double bv0 = (1.-v) * (1.-v) * (1.-v);
-    double bv1 = 3. * v * (1.-v) * (1.-v);
-    double bv2 = 3. * v * v * (1.-v);
-    double bv3 = v * v * v;
+// function prototypes:
 
-    // finally, we get to compute something:
+float GetDistanceSquared( Body *, Body * );
+float GetUnitVector( Body *, Body *, float *, float *, float * );
+float Ranf( float, float );
+int	Ranf( int, int );
 
-    double top =       bu0 * ( bv0*TOPZ00 + bv1*TOPZ01 + bv2*TOPZ02 + bv3*TOPZ03 )
-        + bu1 * ( bv0*TOPZ10 + bv1*TOPZ11 + bv2*TOPZ12 + bv3*TOPZ13 )
-        + bu2 * ( bv0*TOPZ20 + bv1*TOPZ21 + bv2*TOPZ22 + bv3*TOPZ23 )
-        + bu3 * ( bv0*TOPZ30 + bv1*TOPZ31 + bv2*TOPZ32 + bv3*TOPZ33 );
+int main( int argc, char *argv[ ] )
+{
+	#ifndef _OPENMP
+		fprintf( stderr, "OpenMP is not available\n" );
+		return 1;
+	#endif
 
-    double bot =       bu0 * ( bv0*BOTZ00 + bv1*BOTZ01 + bv2*BOTZ02 + bv3*BOTZ03 )
-        + bu1 * ( bv0*BOTZ10 + bv1*BOTZ11 + bv2*BOTZ12 + bv3*BOTZ13 )
-        + bu2 * ( bv0*BOTZ20 + bv1*BOTZ21 + bv2*BOTZ22 + bv3*BOTZ23 )
-        + bu3 * ( bv0*BOTZ30 + bv1*BOTZ31 + bv2*BOTZ32 + bv3*BOTZ33 );
+	omp_set_num_threads( NUMTHREADS );
+	int numProcessors = omp_get_num_procs( );
+	fprintf( stdout, "Have %d processors.\n", numProcessors );
 
-    return top - bot;   // if the bottom surface sticks out above the top surface
-    // then that contribution to the overall volume is negative
+	for( int i = 0; i < NUMBODIES; i++ )
+	{
+		Bodies[i].mass = EARTH_MASS  * Ranf( 0.5f, 10.f );
+		Bodies[i].x = EARTH_DIAMETER * Ranf( -100.f, 100.f );
+		Bodies[i].y = EARTH_DIAMETER * Ranf( -100.f, 100.f );
+		Bodies[i].z = EARTH_DIAMETER * Ranf( -100.f, 100.f );
+		Bodies[i].vx = Ranf( -100.f, 100.f );;
+		Bodies[i].vy = Ranf( -100.f, 100.f );;
+		Bodies[i].vz = Ranf( -100.f, 100.f );;
+	};
+
+	double time0 = omp_get_wtime( );
+
+
+	for( int t = 0; t < NUMSTEPS; t++ )
+	{
+
+		#ifdef COARSE
+			#ifdef STATIC
+				printf("Using Coarse, Static\n");
+				#pragma omp parallel for default(none), shared(Bodies), schedule(static)
+			#else
+				printf("Using Coarse, Dynamic\n");
+				#pragma omp parallel for default(none), shared(Bodies), schedule(dynamic)
+			#endif
+		#endif
+
+		for( int i = 0; i < NUMBODIES; i++ )
+		{
+			float fx = 0.;
+			float fy = 0.;
+			float fz = 0.;
+			Body *bi = &Bodies[i];
+
+			#ifndef COARSE
+				#ifdef STATIC
+					printf("Using Fine, Static\n");
+					#pragma omp parallel for default(none), shared(Bodies, i, bi), reduce(+:fx,fy,fz), schedule(static)
+				#else
+					printf("Using Fine, Dynamic\n");
+					#pragma omp parallel for default(none), shared(Bodies, i, bi), reduce(+:fx,fy,fz), schedule(dynamic)
+				#endif
+			#endif
+
+			for( int j = 0; j < NUMBODIES; j++ )
+			{
+				if( j == i )     continue;
+
+				Body *bj = &Bodies[j];
+
+				float rsqd = GetDistanceSquared( bi, bj );
+				if( rsqd > 0. )
+				{
+					float f = G * bi->mass * bj->mass / rsqd;
+					float ux, uy, uz;
+					GetUnitVector( bi, bj,   &ux, &uy, &uz );
+					fx += f * ux;
+					fy += f * uy;
+					fz += f * uz;
+				}
+			}
+
+			float ax = fx / Bodies[i].mass;
+			float ay = fy / Bodies[i].mass;
+			float az = fz / Bodies[i].mass;
+
+			Bodies[i].xnew = Bodies[i].x + Bodies[i].vx*TIMESTEP + 0.5*ax*TIMESTEP*TIMESTEP;
+			Bodies[i].ynew = Bodies[i].y + Bodies[i].vy*TIMESTEP + 0.5*ay*TIMESTEP*TIMESTEP;
+			Bodies[i].znew = Bodies[i].z + Bodies[i].vz*TIMESTEP + 0.5*az*TIMESTEP*TIMESTEP;
+
+			Bodies[i].vxnew = Bodies[i].vx + ax*TIMESTEP;
+			Bodies[i].vynew = Bodies[i].vy + ay*TIMESTEP;
+			Bodies[i].vznew = Bodies[i].vz + az*TIMESTEP;
+		}
+
+		// setup the state for the next animation step:
+
+		for( int i = 0; i < NUMBODIES; i++ )
+		{
+			Bodies[i].x = Bodies[i].xnew;
+			Bodies[i].y = Bodies[i].ynew;
+			Bodies[i].z = Bodies[i].znew;
+			Bodies[i].vx = Bodies[i].vxnew;
+			Bodies[i].vy = Bodies[i].vynew;
+			Bodies[i].vz = Bodies[i].vznew;
+		}
+
+	}  // t
+
+	double time1 = omp_get_wtime( );
+
+	// print performance here:::
+	printf("megaBodies Calculated/sec = %8.2lf\n", NUMBODIES*NUMBODIES*NUMSTEPS/1000000./(time1-time0));
+	return 0;
 }
 
-int main(int argc, char *argv[]){
-    #ifndef _OPENMP
-    fprintf(stderr, "OpenMP is not supported here.\n");
-    return 1;
-    #endif
-
-    // the area of a full sized tile
-    double fullTileArea = ( ( (XMAX-XMIN)/(double)(NUMNODES-1) ) *
-                           ( (YMAX-YMIN)/(double)(NUMNODES-1) ) );
-
-    omp_set_num_threads(NUMT);
-    printf("Using %d threads and %d^2 nodes\n", NUMT, NUMNODES);
-
-    double time0 = omp_get_wtime();
-
-    double totalVolume = 0;
-    
-    #pragma omp parallel for default(none),shared(fullTileArea),reduction(+:totalVolume)
-    for (int i = 0; i < NUMNODES*NUMNODES; i++) {
-        int iu = i % NUMNODES;
-        int iv = i / NUMNODES; 
-
-        // Calculate incremental volume
-        double weight = 1.0;
-
-        if (iu == 0 || iu == NUMNODES-1){
-            weight *= 0.5;
-        }
-
-        if (iv == 0 || iv == NUMNODES-1){
-            weight *= 0.5;
-        }
-
-        double dArea = fullTileArea * weight;
-
-        double dVolume = dArea * Height(iu, iv);
-
-        // Add incremental volumes
-        totalVolume += dVolume;
-    }
-
-    double time1 = omp_get_wtime();
-    printf("totalVolume = %8.5lf\n",totalVolume);
-    printf("megaHeights/sec = %8.2lf\n", NUMNODES*NUMNODES/1000000./(time1-time0));
-    /* printf("%8.2lf\n", NUMNODES*NUMNODES/1000000./(time1-time0)); */
-
-    return 0;
+float GetDistanceSquared( Body *bi, Body *bj )
+{
+	float dx = bi->x - bj->x;
+	float dy = bi->y - bj->y;
+	float dz = bi->z - bj->z;
+	return dx*dx + dy*dy + dz*dz;
 }
 
+
+float GetUnitVector( Body *from, Body *to, float *ux, float *uy, float *uz )
+{
+	float dx = to->x - from->x;
+	float dy = to->y - from->y;
+	float dz = to->z - from->z;
+
+	float d = sqrt( dx*dx + dy*dy + dz*dz );
+	if( d > 0. )
+	{
+		dx /= d;
+		dy /= d;
+		dz /= d;
+	}
+
+	*ux = dx;
+	*uy = dy;
+	*uz = dz;
+
+	return d;
+}
+
+float Ranf( float low, float high )
+{
+	float r = (float) rand();         // 0 - RAND_MAX
+
+	return(   low  +  r * ( high - low ) / (float)RAND_MAX   );
+}
+
+int Ranf( int ilow, int ihigh )
+{
+	float low = (float)ilow;
+	float high = (float)ihigh + 0.9999f;
+
+	return (int)(  Ranf(low,high) );
+}
 
